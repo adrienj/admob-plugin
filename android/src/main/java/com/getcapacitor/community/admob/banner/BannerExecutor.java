@@ -231,6 +231,21 @@ public class BannerExecutor extends Executor {
             });
     }
 
+    public void destroy() {
+        activitySupplier
+            .get()
+            .runOnUiThread(() -> {
+                if (mAdView != null) {
+                    mViewGroup.removeView(mAdViewLayout);
+                    mAdViewLayout.removeView(mAdView);
+                    mAdView.destroy();
+                    mAdView = null;
+                    mAdViewLayout = null;
+                    Log.d(logTag, "Banner AD Destroyed");
+                }
+            });
+    }
+
     /**
      * Follow iOS method Name:
      * https://developers.google.com/admob/ios/banner?hl=ja

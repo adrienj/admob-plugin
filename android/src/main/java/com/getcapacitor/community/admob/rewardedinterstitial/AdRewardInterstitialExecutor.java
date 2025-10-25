@@ -77,4 +77,14 @@ public class AdRewardInterstitialExecutor extends Executor {
             call.reject(ex.getLocalizedMessage(), ex);
         }
     }
+
+    public void destroy() {
+        activitySupplier
+            .get()
+            .runOnUiThread(() -> {
+                if (mRewardedInterstitialAd != null) {
+                    mRewardedInterstitialAd = null;
+                }
+            });
+    }
 }

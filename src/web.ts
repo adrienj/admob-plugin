@@ -120,4 +120,8 @@ export class AdMobWeb extends WebPlugin implements AdMobPlugin {
       amount: 0,
     };
   }
+
+  async destroy(): Promise<void> {
+    console.log('destroy');
+  }
 }

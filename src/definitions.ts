@@ -52,6 +52,16 @@ export interface AdMobPlugin extends AdMobDefinitions {
    * @since 4.1.1
    */
   setApplicationVolume(options: ApplicationVolumeOptions): Promise<void>;
+
+  /**
+   * Destroy AdMob and clean up all resources.
+   * This is the opposite of initialize() and allows apps to reclaim WebGL context.
+   * Use this when you need to completely tear down the AdMob SDK.
+   *
+   * @group Initialize
+   * @since 7.3.0
+   */
+  destroy(): Promise<void>;
 }
 
 export interface AdMobInitializationOptions {

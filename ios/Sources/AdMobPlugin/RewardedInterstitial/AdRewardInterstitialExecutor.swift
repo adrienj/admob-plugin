@@ -83,4 +83,8 @@ class AdRewardInterstitialExecutor: NSObject, FullScreenContentDelegate {
         NSLog("RewardFullScreenDelegate Ad did dismiss full screen content.")
         self.plugin?.notifyListeners(RewardInterstitialAdPluginEvents.Dismissed.rawValue, data: [:])
     }
+
+    func destroy() {
+        self.rewardedInterstitialAd = nil
+    }
 }

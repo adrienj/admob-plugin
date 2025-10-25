@@ -334,6 +334,7 @@ AdMob.addListener(RewardAdPluginEvents.Rewarded, async () => {
 * [`requestTrackingAuthorization()`](#requesttrackingauthorization)
 * [`setApplicationMuted(...)`](#setapplicationmuted)
 * [`setApplicationVolume(...)`](#setapplicationvolume)
+* [`destroy()`](#destroy)
 * [`showBanner(...)`](#showbanner)
 * [`hideBanner()`](#hidebanner)
 * [`resumeBanner()`](#resumebanner)
@@ -457,6 +458,21 @@ Report application volume to AdMob SDK
 | **`options`** | <code><a href="#applicationvolumeoptions">ApplicationVolumeOptions</a></code> |
 
 **Since:** 4.1.1
+
+--------------------
+
+
+### destroy()
+
+```typescript
+destroy() => Promise<void>
+```
+
+Destroy AdMob and clean up all resources.
+This is the opposite of initialize() and allows apps to reclaim WebGL context.
+Use this when you need to completely tear down the AdMob SDK.
+
+**Since:** 7.3.0
 
 --------------------
 

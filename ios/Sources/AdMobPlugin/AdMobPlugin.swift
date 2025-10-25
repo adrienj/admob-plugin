@@ -28,7 +28,8 @@ public class AdMobPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "prepareRewardVideoAd", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "showRewardVideoAd", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "prepareRewardInterstitialAd", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "showRewardInterstitialAd", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "showRewardInterstitialAd", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "destroy", returnType: CAPPluginReturnPromise)
     ]
 
     var testingDevices: [String] = []
@@ -249,6 +250,16 @@ public class AdMobPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func resetConsentInfo(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             self.consentExecutor.resetConsentInfo(call)
+        }
+    }
+
+    @objc func destroy(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.bannerExecutor.destroy()
+            self.adInterstitialExecutor.destroy()
+            self.adRewardExecutor.destroy()
+            self.adRewardInterstitialExecutor.destroy()
+            call.resolve([:])
         }
     }
 

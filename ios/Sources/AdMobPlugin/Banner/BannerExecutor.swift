@@ -105,6 +105,10 @@ class BannerExecutor: NSObject, BannerViewDelegate {
         call.resolve([:])
     }
 
+    func destroy() {
+        self.removeBannerViewToView()
+    }
+
     private func addBannerViewToView(_ bannerView: BannerView, _ adPosition: String, _ Margin: Int) {
         removeBannerViewToView()
         bannerView.translatesAutoresizingMaskIntoConstraints = false

@@ -73,4 +73,14 @@ public class AdInterstitialExecutor extends Executor {
                 }
             });
     }
+
+    public void destroy() {
+        activitySupplier
+            .get()
+            .runOnUiThread(() -> {
+                if (interstitialAd != null) {
+                    interstitialAd = null;
+                }
+            });
+    }
 }
