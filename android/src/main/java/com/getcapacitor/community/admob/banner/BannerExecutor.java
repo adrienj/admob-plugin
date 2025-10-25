@@ -243,6 +243,7 @@ public class BannerExecutor extends Executor {
                     mAdViewLayout = null;
                     Log.d(logTag, "Banner AD Destroyed");
                 }
+                mViewGroup = null;
             });
     }
 
