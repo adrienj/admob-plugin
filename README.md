@@ -140,6 +140,21 @@ export async function initialize(): Promise<void> {
 
 Send an array of device Ids in `testingDevices` to use production like ads on your specified devices -> https://developers.google.com/admob/android/test-ads#enable_test_devices
 
+### Destroy AdMob
+
+If you need to completely tear down the AdMob SDK and reclaim resources (such as WebGL context), you can call the `destroy()` method. This is particularly useful for apps that need to reclaim the WebGL context or switch between different ad SDKs.
+
+```ts
+import { AdMob } from '@capacitor-community/admob';
+
+export async function cleanupAdMob(): Promise<void> {
+  // This will remove all banners and clean up all ad instances
+  await AdMob.destroy();
+}
+```
+
+**Note**: After calling `destroy()`, you will need to call `initialize()` again if you want to show ads later.
+
 ### User Message Platform (UMP)
 
 To use UMP, you must [create your GDPR messages](https://support.google.com/admob/answer/10113207?hl=en&ref_topic=10105230&sjid=6731900490614517032-AP).
