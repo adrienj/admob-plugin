@@ -77,7 +77,11 @@ public class AdMob extends Plugin {
                     public void onInitializationComplete(InitializationStatus initializationStatus) {}
                 }
             );
+            // Reset all executors to allow re-use after destroy
             bannerExecutor.initialize();
+            adInterstitialExecutor.initialize();
+            adRewardExecutor.initialize();
+            adRewardInterstitialExecutor.initialize();
             call.resolve();
         } catch (Exception ex) {
             call.reject(ex.getLocalizedMessage(), ex);

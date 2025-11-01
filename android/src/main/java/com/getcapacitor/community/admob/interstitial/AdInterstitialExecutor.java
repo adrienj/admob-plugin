@@ -32,6 +32,10 @@ public class AdInterstitialExecutor extends Executor {
         this.adCallbackAndListeners = adCallbackAndListeners;
     }
 
+    public void initialize() {
+        isDestroyed = false;
+    }
+
     public void prepareInterstitial(final PluginCall call, BiConsumer<String, JSObject> notifyListenersFunction) {
         if (isDestroyed) {
             call.reject("AdInterstitialExecutor has been destroyed. Please call initialize() first.");

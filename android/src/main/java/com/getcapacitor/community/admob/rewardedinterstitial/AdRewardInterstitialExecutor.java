@@ -29,6 +29,10 @@ public class AdRewardInterstitialExecutor extends Executor {
         super(contextSupplier, activitySupplier, notifyListenersFunction, pluginLogTag, "AdRewardExecutor");
     }
 
+    public void initialize() {
+        isDestroyed = false;
+    }
+
     @PluginMethod
     public void prepareRewardInterstitialAd(final PluginCall call, BiConsumer<String, JSObject> notifyListenersFunction) {
         if (isDestroyed) {

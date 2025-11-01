@@ -29,6 +29,10 @@ public class AdRewardExecutor extends Executor {
         super(contextSupplier, activitySupplier, notifyListenersFunction, pluginLogTag, "AdRewardExecutor");
     }
 
+    public void initialize() {
+        isDestroyed = false;
+    }
+
     @PluginMethod
     public void prepareRewardVideoAd(final PluginCall call, BiConsumer<String, JSObject> notifyListenersFunction) {
         if (isDestroyed) {
