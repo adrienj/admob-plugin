@@ -18,6 +18,7 @@ import com.google.android.gms.common.util.BiConsumer;
 public class AdRewardInterstitialExecutor extends Executor {
 
     public static RewardedInterstitialAd mRewardedInterstitialAd;
+    private boolean isDestroyed = false;
 
     public AdRewardInterstitialExecutor(
         Supplier<Context> contextSupplier,
@@ -30,11 +31,20 @@ public class AdRewardInterstitialExecutor extends Executor {
 
     @PluginMethod
     public void prepareRewardInterstitialAd(final PluginCall call, BiConsumer<String, JSObject> notifyListenersFunction) {
+        if (isDestroyed) {
+            call.reject("AdRewardInterstitialExecutor has been destroyed. Please call initialize() first.");
+            return;
+        }
+
         final AdOptions adOptions = AdOptions.getFactory().createRewardInterstitialOptions(call);
 
         activitySupplier
             .get()
             .runOnUiThread(() -> {
+                if (isDestroyed) {
+                    call.reject("AdRewardInterstitialExecutor has been destroyed during prepare.");
+                    return;
+                }
                 try {
                     final AdRequest adRequest = RequestHelper.createRequest(adOptions);
                     final String id = AdViewIdHelper.getFinalAdId(adOptions, adRequest, logTag, contextSupplier.get());
@@ -56,6 +66,11 @@ public class AdRewardInterstitialExecutor extends Executor {
 
     @PluginMethod
     public void showRewardInterstitialAd(final PluginCall call, BiConsumer<String, JSObject> notifyListenersFunction) {
+        if (isDestroyed) {
+            call.reject("AdRewardInterstitialExecutor has been destroyed. Please call initialize() first.");
+            return;
+        }
+
         if (mRewardedInterstitialAd == null) {
             String errorMessage = "No Reward Interstitial Video Ad can be shown. It was not prepared or maybe it failed to be prepared.";
             call.reject(errorMessage);
@@ -68,6 +83,10 @@ public class AdRewardInterstitialExecutor extends Executor {
             activitySupplier
                 .get()
                 .runOnUiThread(() -> {
+                    if (isDestroyed) {
+                        call.reject("AdRewardInterstitialExecutor has been destroyed during show.");
+                        return;
+                    }
                     mRewardedInterstitialAd.show(
                         activitySupplier.get(),
                         RewardedInterstitialAdCallbackAndListeners.INSTANCE.getOnUserEarnedRewardListener(call, notifyListenersFunction)
@@ -82,7 +101,10 @@ public class AdRewardInterstitialExecutor extends Executor {
         activitySupplier
             .get()
             .runOnUiThread(() -> {
+                isDestroyed = true;
                 if (mRewardedInterstitialAd != null) {
+                    // Set full screen content callback to null to prevent callbacks
+                    mRewardedInterstitialAd.setFullScreenContentCallback(null);
                     mRewardedInterstitialAd = null;
                 }
             });

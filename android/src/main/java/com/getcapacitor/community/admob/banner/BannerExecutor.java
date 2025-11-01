@@ -33,6 +33,7 @@ public class BannerExecutor extends Executor {
     private RelativeLayout mAdViewLayout;
     private AdView mAdView;
     private ViewGroup mViewGroup;
+    private boolean isDestroyed = false;
 
     public BannerExecutor(
         Supplier<Context> contextSupplier,
@@ -44,10 +45,19 @@ public class BannerExecutor extends Executor {
     }
 
     public void initialize() {
+        isDestroyed = false;
         mViewGroup = (ViewGroup) ((ViewGroup) activitySupplier.get().findViewById(android.R.id.content)).getChildAt(0);
     }
 
     public void showBanner(final PluginCall call) {
+        if (isDestroyed) {
+            call.reject("BannerExecutor has been destroyed. Please call initialize() first.");
+            return;
+        }
+        if (mViewGroup == null) {
+            call.reject("BannerExecutor not initialized. Please call initialize() first.");
+            return;
+        }
         final AdOptions adOptions = AdOptions.getFactory().createBannerOptions(call);
         float density = contextSupplier.get().getResources().getDisplayMetrics().density;
 
@@ -151,6 +161,10 @@ public class BannerExecutor extends Executor {
     }
 
     public void hideBanner(final PluginCall call) {
+        if (isDestroyed) {
+            call.reject("BannerExecutor has been destroyed. Please call initialize() first.");
+            return;
+        }
         if (mAdView == null) {
             call.reject("You tried to hide a banner that was never shown");
             return;
@@ -235,15 +249,40 @@ public class BannerExecutor extends Executor {
         activitySupplier
             .get()
             .runOnUiThread(() -> {
+                isDestroyed = true;
                 if (mAdView != null) {
-                    mViewGroup.removeView(mAdViewLayout);
-                    mAdViewLayout.removeView(mAdView);
-                    mAdView.destroy();
+                    try {
+                        // Remove listener to prevent callbacks after destroy
+                        mAdView.setAdListener(null);
+                        // Pause ad requests to stop any pending loads
+                        mAdView.pause();
+                        // Remove from view hierarchy first
+                        if (mViewGroup != null && mAdViewLayout != null) {
+                            mViewGroup.removeView(mAdViewLayout);
+                        }
+                        if (mAdViewLayout != null && mAdView.getParent() == mAdViewLayout) {
+                            mAdViewLayout.removeView(mAdView);
+                        }
+                        // Destroy the ad view - this should release WebGL context
+                        mAdView.destroy();
+                        Log.d(logTag, "Banner AdView destroyed - WebGL context should be released");
+                    } catch (Exception e) {
+                        Log.e(logTag, "Error destroying banner ad: " + e.getMessage());
+                    }
                     mAdView = null;
                     mAdViewLayout = null;
-                    Log.d(logTag, "Banner AD Destroyed");
+                }
+                // Clean up layout container
+                if (mAdViewLayout != null) {
+                    try {
+                        mAdViewLayout.removeAllViews();
+                    } catch (Exception e) {
+                        Log.e(logTag, "Error removing layout views: " + e.getMessage());
+                    }
+                    mAdViewLayout = null;
                 }
                 mViewGroup = null;
+                Log.d(logTag, "BannerExecutor fully destroyed");
             });
     }
 
@@ -256,6 +295,11 @@ public class BannerExecutor extends Executor {
         activitySupplier
             .get()
             .runOnUiThread(() -> {
+                // Prevent creating new ad view if destroyed
+                if (isDestroyed || mViewGroup == null) {
+                    Log.w(logTag, "Cannot create ad view: BannerExecutor destroyed or not initialized");
+                    return;
+                }
                 final AdRequest adRequest = RequestHelper.createRequest(adOptions);
                 // Assign the correct id needed
                 AdViewIdHelper.assignIdToAdView(mAdView, adOptions, adRequest, logTag, contextSupplier.get());
@@ -267,6 +311,10 @@ public class BannerExecutor extends Executor {
                     new AdListener() {
                         @Override
                         public void onAdLoaded() {
+                            if (isDestroyed) {
+                                Log.w(logTag, "Ad loaded after destroy, ignoring");
+                                return;
+                            }
                             final BannerAdSizeInfo sizeInfo = new BannerAdSizeInfo(mAdView);
 
                             notifyListeners(BannerAdPluginEvents.SizeChanged.getWebEventName(), sizeInfo);
@@ -276,7 +324,11 @@ public class BannerExecutor extends Executor {
 
                         @Override
                         public void onAdFailedToLoad(@NonNull LoadAdError adError) {
-                            if (mAdView != null) {
+                            if (isDestroyed) {
+                                Log.w(logTag, "Ad failed to load after destroy, ignoring");
+                                return;
+                            }
+                            if (mAdView != null && mViewGroup != null) {
                                 mViewGroup.removeView(mAdViewLayout);
                                 mAdViewLayout.removeView(mAdView);
                                 mAdView.destroy();
@@ -294,18 +346,21 @@ public class BannerExecutor extends Executor {
 
                         @Override
                         public void onAdOpened() {
+                            if (isDestroyed) return;
                             notifyListeners(BannerAdPluginEvents.Opened.getWebEventName(), emptyObject);
                             super.onAdOpened();
                         }
 
                         @Override
                         public void onAdClosed() {
+                            if (isDestroyed) return;
                             notifyListeners(BannerAdPluginEvents.Closed.getWebEventName(), emptyObject);
                             super.onAdClosed();
                         }
 
                         @Override
                         public void onAdImpression() {
+                            if (isDestroyed) return;
                             notifyListeners(BannerAdPluginEvents.AdImpression.getWebEventName(), emptyObject);
                             super.onAdImpression();
                         }

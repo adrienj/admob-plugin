@@ -18,6 +18,7 @@ import com.google.android.gms.common.util.BiConsumer;
 public class AdRewardExecutor extends Executor {
 
     public static RewardedAd mRewardedAd;
+    private boolean isDestroyed = false;
 
     public AdRewardExecutor(
         Supplier<Context> contextSupplier,
@@ -30,11 +31,20 @@ public class AdRewardExecutor extends Executor {
 
     @PluginMethod
     public void prepareRewardVideoAd(final PluginCall call, BiConsumer<String, JSObject> notifyListenersFunction) {
+        if (isDestroyed) {
+            call.reject("AdRewardExecutor has been destroyed. Please call initialize() first.");
+            return;
+        }
+
         final AdOptions adOptions = AdOptions.getFactory().createRewardVideoOptions(call);
 
         activitySupplier
             .get()
             .runOnUiThread(() -> {
+                if (isDestroyed) {
+                    call.reject("AdRewardExecutor has been destroyed during prepare.");
+                    return;
+                }
                 try {
                     final AdRequest adRequest = RequestHelper.createRequest(adOptions);
                     final String id = AdViewIdHelper.getFinalAdId(adOptions, adRequest, logTag, contextSupplier.get());
@@ -52,6 +62,11 @@ public class AdRewardExecutor extends Executor {
 
     @PluginMethod
     public void showRewardVideoAd(final PluginCall call, BiConsumer<String, JSObject> notifyListenersFunction) {
+        if (isDestroyed) {
+            call.reject("AdRewardExecutor has been destroyed. Please call initialize() first.");
+            return;
+        }
+
         if (mRewardedAd == null) {
             String errorMessage = "No Reward Video Ad can be shown. It was not prepared or maybe it failed to be prepared.";
             call.reject(errorMessage);
@@ -64,6 +79,10 @@ public class AdRewardExecutor extends Executor {
             activitySupplier
                 .get()
                 .runOnUiThread(() -> {
+                    if (isDestroyed) {
+                        call.reject("AdRewardExecutor has been destroyed during show.");
+                        return;
+                    }
                     mRewardedAd.show(
                         activitySupplier.get(),
                         RewardedAdCallbackAndListeners.INSTANCE.getOnUserEarnedRewardListener(call, notifyListenersFunction)
@@ -78,7 +97,10 @@ public class AdRewardExecutor extends Executor {
         activitySupplier
             .get()
             .runOnUiThread(() -> {
+                isDestroyed = true;
                 if (mRewardedAd != null) {
+                    // Set full screen content callback to null to prevent callbacks
+                    mRewardedAd.setFullScreenContentCallback(null);
                     mRewardedAd = null;
                 }
             });

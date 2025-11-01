@@ -61,9 +61,12 @@ public class AdMob extends Plugin {
         getLogTag()
     );
 
+    private boolean isDestroyed = false;
+
     // Initialize AdMob with appId
     @PluginMethod
     public void initialize(final PluginCall call) {
+        isDestroyed = false;
         this.setRequestConfiguration(call);
 
         try {
@@ -139,6 +142,10 @@ public class AdMob extends Plugin {
     // Show a banner Ad
     @PluginMethod
     public void showBanner(final PluginCall call) {
+        if (isDestroyed) {
+            call.reject("AdMob has been destroyed. Please call initialize() first.");
+            return;
+        }
         bannerExecutor.showBanner(call);
     }
 
@@ -162,42 +169,77 @@ public class AdMob extends Plugin {
 
     @PluginMethod
     public void prepareInterstitial(final PluginCall call) {
+        if (isDestroyed) {
+            call.reject("AdMob has been destroyed. Please call initialize() first.");
+            return;
+        }
         adInterstitialExecutor.prepareInterstitial(call, this::notifyListeners);
     }
 
     // Show interstitial Ad
     @PluginMethod
     public void showInterstitial(final PluginCall call) {
+        if (isDestroyed) {
+            call.reject("AdMob has been destroyed. Please call initialize() first.");
+            return;
+        }
         adInterstitialExecutor.showInterstitial(call, this::notifyListeners);
     }
 
     @PluginMethod
     public void prepareRewardVideoAd(final PluginCall call) {
+        if (isDestroyed) {
+            call.reject("AdMob has been destroyed. Please call initialize() first.");
+            return;
+        }
         adRewardExecutor.prepareRewardVideoAd(call, this::notifyListeners);
     }
 
     @PluginMethod
     public void showRewardVideoAd(final PluginCall call) {
+        if (isDestroyed) {
+            call.reject("AdMob has been destroyed. Please call initialize() first.");
+            return;
+        }
         adRewardExecutor.showRewardVideoAd(call, this::notifyListeners);
     }
 
     @PluginMethod
     public void prepareRewardInterstitialAd(final PluginCall call) {
+        if (isDestroyed) {
+            call.reject("AdMob has been destroyed. Please call initialize() first.");
+            return;
+        }
         adRewardInterstitialExecutor.prepareRewardInterstitialAd(call, this::notifyListeners);
     }
 
     @PluginMethod
     public void showRewardInterstitialAd(final PluginCall call) {
+        if (isDestroyed) {
+            call.reject("AdMob has been destroyed. Please call initialize() first.");
+            return;
+        }
         adRewardInterstitialExecutor.showRewardInterstitialAd(call, this::notifyListeners);
     }
 
     @PluginMethod
     public void destroy(final PluginCall call) {
         try {
+            isDestroyed = true;
+
+            // Destroy all ad executors
             bannerExecutor.destroy();
             adInterstitialExecutor.destroy();
             adRewardExecutor.destroy();
             adRewardInterstitialExecutor.destroy();
+
+            // Set an empty request configuration to prevent any automatic ad requests
+            // This helps prevent the SDK from making background ad requests
+            RequestConfiguration requestConfiguration = new RequestConfiguration.Builder()
+                .setTestDeviceIds(new java.util.ArrayList<>())
+                .build();
+            MobileAds.setRequestConfiguration(requestConfiguration);
+
             call.resolve();
         } catch (Exception ex) {
             call.reject(ex.getLocalizedMessage(), ex);
