@@ -6,10 +6,7 @@ declare type Overload<T> = (eventName: T, listenerFunc: (...args: any[]) => any)
 declare type OverloadUnionForEnum<T> = T extends any ? Overload<T> : never;
 declare type OverloadUnion<T> = OverloadUnionForEnum<T>;
 declare type Overloads<T> = UnionToIntersection<OverloadUnion<T>>;
-export declare type ValidateAllEventsEnumAreImplemented<
-  TEventsEnum,
-  TDefinitionInterface extends {
+export declare type ValidateAllEventsEnumAreImplemented<TEventsEnum, TDefinitionInterface extends {
     addListener: Overloads<TEventsEnum>;
-  },
-> = TDefinitionInterface;
+}> = TDefinitionInterface;
 export {};

@@ -1,3 +1,3 @@
 export interface AdLoadInfo {
-  adUnitId: string;
+    adUnitId: string;
 }
