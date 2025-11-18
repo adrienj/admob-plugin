@@ -19,6 +19,7 @@ public class AdInterstitialExecutor extends Executor {
     public static InterstitialAd interstitialAd;
 
     InterstitialAdCallbackAndListeners adCallbackAndListeners;
+    private boolean isDestroyed = false;
 
     public AdInterstitialExecutor(
         Supplier<Context> contextSupplier,
@@ -31,7 +32,16 @@ public class AdInterstitialExecutor extends Executor {
         this.adCallbackAndListeners = adCallbackAndListeners;
     }
 
+    public void initialize() {
+        isDestroyed = false;
+    }
+
     public void prepareInterstitial(final PluginCall call, BiConsumer<String, JSObject> notifyListenersFunction) {
+        if (isDestroyed) {
+            call.reject("AdInterstitialExecutor has been destroyed. Please call initialize() first.");
+            return;
+        }
+
         final AdOptions.AdOptionsFactory factory = AdOptions.getFactory();
         final AdOptions adOptions = factory.createInterstitialOptions(call);
 
@@ -39,6 +49,10 @@ public class AdInterstitialExecutor extends Executor {
             activitySupplier
                 .get()
                 .runOnUiThread(() -> {
+                    if (isDestroyed) {
+                        call.reject("AdInterstitialExecutor has been destroyed during prepare.");
+                        return;
+                    }
                     final AdRequest adRequest = RequestHelper.createRequest(adOptions);
                     final String id = AdViewIdHelper.getFinalAdId(adOptions, adRequest, logTag, contextSupplier.get());
                     InterstitialAd.load(
@@ -54,6 +68,11 @@ public class AdInterstitialExecutor extends Executor {
     }
 
     public void showInterstitial(final PluginCall call, BiConsumer<String, JSObject> notifyListenersFunction) {
+        if (isDestroyed) {
+            call.reject("AdInterstitialExecutor has been destroyed. Please call initialize() first.");
+            return;
+        }
+
         if (interstitialAd == null) {
             String errorMessage = "No Interstitial can be shown. It was not prepared or maybe it failed to be prepared.";
             call.reject(errorMessage);
@@ -65,11 +84,28 @@ public class AdInterstitialExecutor extends Executor {
         activitySupplier
             .get()
             .runOnUiThread(() -> {
+                if (isDestroyed) {
+                    call.reject("AdInterstitialExecutor has been destroyed during show.");
+                    return;
+                }
                 try {
                     interstitialAd.show(activitySupplier.get());
                     call.resolve();
                 } catch (Exception ex) {
                     call.reject(ex.getLocalizedMessage(), ex);
+                }
+            });
+    }
+
+    public void destroy() {
+        activitySupplier
+            .get()
+            .runOnUiThread(() -> {
+                isDestroyed = true;
+                if (interstitialAd != null) {
+                    // Set full screen content delegate to null to prevent callbacks
+                    interstitialAd.setFullScreenContentCallback(null);
+                    interstitialAd = null;
                 }
             });
     }
